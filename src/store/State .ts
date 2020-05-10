@@ -1,7 +1,7 @@
 export interface State {
     activate:any
     friend:{
-        [index:string]:Array<IQTQQ.friendMsg>
+        [index:string]:Array<IQTQQ.friendMsgdata>
     }
 }
 

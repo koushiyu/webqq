@@ -1,7 +1,7 @@
 <template>
     <div>
-        <label for="">ip</label><input type="text" v-model="ip"><br>
-        <label for="">qq号</label><input type="text" v-model="qq">
+        <label for="">机器人的地址 形如http://127.0.0.1:8888</label><input type="text" v-model="ip"><br>
+        <label for="">机器人的qq号</label><input type="text" v-model="qq">
         <button @click="click">确定</button>
     </div>
 </template>

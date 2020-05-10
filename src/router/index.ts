@@ -6,6 +6,11 @@ import config from '../views/config.vue'
 Vue.use(VueRouter)
 
   const routes: Array<RouteConfig> = [
+    {
+      path: '/',
+      name: 'friend',
+      component: friend
+    },
   {
     path: '/friend/:id',
     name: 'friend',

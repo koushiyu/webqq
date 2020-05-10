@@ -1,46 +1,38 @@
 <template>
-  <div style="display:flex;height:100vh;flex-flow: column;position: relative;">
-    <div class="sol" style="overflow:auto;height:calc(100vh - 200px)">
-      <div class="m-message">
-        <ul>
+<el-container>
+  <el-main>
+    <div class="sol" style="overflow:auto;height:calc(100vh - 234px)" id="chatContainer">
+      <div class="m-message" >
+        <ul >
           <li
-            v-for="(item, index) in $store.state.friend[$route.params.id]"
+            v-for="(item, index) in this.$store.state.friend[$route.params.id]"
             :key="index"
           >
             <!-- <p class="time"><span>{{item.date | time}}</span></p> -->
-            <div class="m-main">
+            <div class="m-main" :class="item.isSend ? 'self' : ''">
               <img
                 class="avatar"
                 width="50"
                 height="50"
-                :src="
-                  'http://q.qlogo.cn/headimg_dl?dst_uin=' +
-                    $route.params.id +
-                    '&spec=640'
-                "
+                :src="`http://q.qlogo.cn/headimg_dl?dst_uin=${item.isSend?qq:$route.params.id}&spec=100`"
               />
               <!-- {{item}}--{{index}} -->
-              <div
-                class="text"
-                v-if="item.CurrentPacket.Data.MsgType == 'TextMsg'"
-              >
-                {{ item.CurrentPacket.Data.Content }}
+              <div class="text" v-if="item.MsgType == 'TextMsg'">
+                {{ item.Content }}
               </div>
-              <img
-                class="text"
-                v-else-if="item.CurrentPacket.Data.MsgType == 'PicMsg'"
-                style="background-color: #fff;max-width:200px;padding: 0 ;"
-                :src="JSON.parse(item.CurrentPacket.Data.Content).Url"
-              />
+              <div v-else-if="item.MsgType == 'PicMsg'">
+                <viewer>
+                  <img class="text" style="background-color: #fff;max-width:200px;padding: 0 ;" :src="JSON.parse(item.Content).Url"/>  
+                </viewer> 
+                {{ JSON.parse(item.Content).Content }}
+              </div>
               <div
                 class="text"
                 style="background-color: #fff;padding: 0 ;"
-                v-else-if="item.CurrentPacket.Data.MsgType == 'VoiceMsg'"
+                v-else-if="item.MsgType == 'VoiceMsg'"
               >
                 <div>
-                  <mAudio
-                    :url="JSON.parse(item.CurrentPacket.Data.Content).Url"
-                  ></mAudio>
+                  <mAudio :url="JSON.parse(item.Content).Url"></mAudio>
                 </div>
               </div>
               <div class="text" v-else>
@@ -50,24 +42,26 @@
           </li>
         </ul>
       </div>
-      <!-- <i class="text">{{  }}</i> -->
     </div>
-    <!-- {{Msg}} -->
-    <div id="edit" style="text-align:left"></div>
-    <div style="bottom: 10px;right: 10px;position:absolute;">
-      <el-button style="z-index:100001" type="primary" @click="click"
-        >发送</el-button
-      >
-    </div>
-  </div>
+  </el-main>
+  <el-footer>
+     <div id="edit" style="text-align:left"></div>
+      <div style="bottom: 20px;right: 10px;position:absolute;">
+        <el-button :disabled="$route.params.id?false:true" style="z-index:100001" type="primary" @click="click">发送</el-button>
+      </div>
+  </el-footer>
+</el-container>
+ 
 </template>
 
 <script>
-import cheerio from "cheerio"
+import cheerio from "cheerio";
 import axios from "axios";
 import mAudio from "@/components/m-audio";
 import wangEditor from "wangEditor";
 import api from "../api/api";
+import emoji from "../assets/emoji.json";
+
 export default {
   name: "Home",
   components: {
@@ -76,13 +70,23 @@ export default {
   data() {
     return {
       edit: null,
+      qq:null
     };
   },
   mounted() {
+    this.qq =  JSON.parse(localStorage.getItem("config")).qq
     this.$store.commit("setActivate", this);
     this.edit = new wangEditor("#edit");
     this.edit.customConfig.zIndex = 0;
     this.edit.customConfig.uploadImgShowBase64 = true;
+    this.edit.customConfig.emotions = [
+      {
+        title: "默认",
+        type: "image",
+        content: emoji,
+      },
+    ];
+
     this.edit.customConfig.menus = [
       "emoticon", // 表情
       "image", // 插入图片
@@ -94,34 +98,34 @@ export default {
   },
   methods: {
     click() {
-      const $ = cheerio.load(this.edit.txt.html())
-      if($("img")[0]?.attribs["src"]){
+      // console.log(123)
+      const $ = cheerio.load(this.edit.txt.html());
       const src = $("img")[0]?.attribs["src"]
-      api.sendMsg({
-          "toUser":parseInt(this.$route.params.id),
-          "sendToType": 1,
-          "sendMsgType": "PicMsg",
-          "content": this.edit.txt.text().split("&nbsp;")[1],
-          "groupid": 0,
-          "atUser": 0,
-          "picUrl": src.startsWith("http")?src:'',
-          "picBase64Buf": src.startsWith("data")?src.split('data:image/jpeg;base64,')[1]:'',
-          "fileMd5": ""
-      });
-      }else{
-         api.sendMsg({
-          "toUser": parseInt(this.$route.params.id),
-          "sendToType": 1,
-          "sendMsgType": "TextMsg",
-          "content": this.edit.txt.text(),
-          "groupid": 0,
-          "atUser": 0,
-          "picUrl": "",
-          "fileMd5": ""
-        });
-      }
-     this.edit.txt.html("")
-      
+      const Data = {};
+      Data.toUser =  parseInt(this.$route.params.id)
+      console.log(this.$store.state?.friend[this.$route.params?.id]&&this.$store.state?.friend[this.$route.params?.id][this.$store.state?.friend[this.$route.params?.id]?.length])
+      Data.sendToType = this.$store.state.friend[this.$route.params?.id][this.$store.state.friend[this.$route.params?.id]?.length -1]?.TempUin?3:1
+      // console.log((this.$store.state.friend[this.$route.params.id][this.$store.state.friend[this.$route.params.id].length -1]))
+      Data.groupid= this.$store.state.friend[this.$route.params.id][this.$store.state.friend[this.$route.params.id].length -1].TempUin|0,
+      Data.atUser= 0,
+      Data.picUrl= src?.startsWith("http") ? src : "",
+      Data.picBase64Buf= src?.startsWith("data")? src.split(/^data:image\/(jpeg|png|gif);base64,/)[2]: "",
+      Data.fileMd5= "",
+      Data.sendMsgType =  Data.picUrl ||  Data.picBase64Buf ?"PicMsg":"TextMsg"
+      Data.content= this.edit.txt.text().split("&nbsp;").join() || ""
+      api.sendMsg(Data)
+      this.$store.commit("AddSendfirendMsg",{
+        CurrentPacket:{
+          Data:{
+            FromUin:this.$route.params.id,
+            MsgType: Data.sendMsgType,
+            Content: src? JSON.stringify({Url:Data.picUrl?Data.picUrl:src,Content:Data.content}) :Data.content,
+            isSend: true,
+            TempUin:this.$store.state.friend[this.$route.params.id][this.$store.state.friend[this.$route.params.id].length -1].TempUin
+          }
+        }
+      })
+      this.edit.txt.html("")
     },
   },
 };

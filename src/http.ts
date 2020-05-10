@@ -14,7 +14,7 @@ else{
 const instance = axios.create({
   baseURL: ip + "/v1/LuaApiCaller?qq=" + qq,
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": "text/plain",
     
   },
 });

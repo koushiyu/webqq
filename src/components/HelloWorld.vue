@@ -1,14 +1,14 @@
 <template>
-    <el-card :style="$route.params.id == qqnumber?'background-color:#eee':''">
+    <el-card :style="$route.params.id == qqnumber?'background-color:#eee':''" ref="card">
         <router-link :to="'/friend/'+qqnumber">
-        
         <div style="display:flex" >
             <div style="height: 70px;height: 70px;">
-                <img style="width: 70px; height: 70px" :src="imagesrc" alt="">
+                <img style="width: 70px; height: 70px" :src="imagesrc" alt="realname" :title="realname">
             </div>
             <div style="width: 100%;">
-                <p>
+                <p class="nickname txt"  v-show="len>20" :title="realname" >
                     {{realname}}
+                    <!-- {{$refs.card}} -->
                     
                 </p>
             </div>
@@ -25,32 +25,37 @@
         Vue,
         Watch
     } from 'vue-property-decorator';
+import { watch } from 'fs';
 
     @Component({
         data() {
             return {
                 imagesrc: "",
-                realname: ""
+                realname: "",
+                card:""
             }
         },
         async mounted() {
             console.log(this.$route)
-            this.$data.imagesrc = `http://q.qlogo.cn/headimg_dl?dst_uin=${this.$props["qqnumber"]}&spec=640`
+            this.$data.imagesrc = `http://q.qlogo.cn/headimg_dl?dst_uin=${this.$props["qqnumber"]}&spec=100`
             const {data} = await api.GetUserInfo({UserID:this.$props["qqnumber"]})
             this.$data.realname = data.nickname
+            this.$data.card = (this.$refs.card as any).$el
         }
     })
     export default class HelloWorld extends Vue {
         @Prop() private qqnumber!: number;
+        @Prop() private len!: number;
         // @Prop() private text!: string;
         @Watch("qqnumber")
         async getVisible(newVal:any, oldVal:any) {
             // console.log(newVal, oldVal)
-            this.$data.imagesrc = `http://q.qlogo.cn/headimg_dl?dst_uin=${this.$props["qqnumber"]}&spec=640`
+            this.$data.imagesrc = `http://q.qlogo.cn/headimg_dl?dst_uin=${this.$props["qqnumber"]}&spec=100`
             const {data} = await api.GetUserInfo({UserID:this.$props["qqnumber"]})
             // console.log(data)
             this.$data.realname = data.nickname
         };
+        
         
     }
 </script>
@@ -68,7 +73,7 @@ img{
 p{
     margin: 0;
     text-align: right;
-    font-size:4rem;
+    font-size:1rem;
     line-height:2rem;
     /* text-align: left; */
     /* width: 100%; */
@@ -84,5 +89,10 @@ a{
 
 .el-card:hover {
     background-color:#eee;
+}
+.txt{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 </style>
